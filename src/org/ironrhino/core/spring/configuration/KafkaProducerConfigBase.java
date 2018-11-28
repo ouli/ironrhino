@@ -7,6 +7,7 @@ import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.ironrhino.core.metrics.KafkaProducerMetrics;
+import org.ironrhino.core.tracing.Tracing;
 import org.ironrhino.core.util.AppInfo;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -16,6 +17,8 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
+import io.opentracing.contrib.kafka.spring.TracingProducerFactory;
+import io.opentracing.util.GlobalTracer;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -69,7 +72,9 @@ public class KafkaProducerConfigBase {
 		JsonSerializer<T> serializer = new JsonSerializer<>();
 		serializer.setAddTypeInfo(false);
 		producerFactory.setValueSerializer(serializer);
-		return producerFactory;
+		return Tracing.isEnabled()
+				? new TracingProducerFactory<String, T>(producerFactory, GlobalTracer.get())
+				: producerFactory;
 	}
 
 	@Bean

@@ -11,6 +11,10 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
+import org.ironrhino.core.tracing.Tracing;
+
+import io.opentracing.Span;
+import io.opentracing.util.GlobalTracer;
 
 import lombok.experimental.UtilityClass;
 
@@ -290,6 +294,16 @@ public class CodecUtils {
 	}
 
 	public static String generateRequestId() {
+		if (Tracing.isEnabled()) {
+			Span span = GlobalTracer.get().activeSpan();
+			if (span != null) {
+				// return span.context().toTraceId();
+				String requestId = span.context().toString();
+				if (requestId.indexOf(':') > 0)
+					requestId = requestId.substring(0, requestId.indexOf(':'));
+				return requestId;
+			}
+		}
 		return nextId();
 	}
 
